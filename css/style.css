@@ -1,0 +1,91 @@
+#my-map {
+  width: 1000px;
+  height: 600px;
+  z-index: 1000;
+}
+#tooltip {
+  position: absolute;
+  opacity: 1;
+  background: #fff;
+  box-shadow: 2px 2px 3px 0px rgb(92 92 92 / 0.5);
+  border: 1px solid #ddd;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+}
+#my-map .map-legend {
+  z-index: 314159;
+  position:absolute;
+  bottom: 30px;
+  /* left: 0; */
+  
+}
+
+.title-div {
+  margin: auto;
+  width: 50%;
+  /* border: 3px solid green; */
+  text-align: center;
+}
+
+.page-title {
+  position: absolute;
+  top: 15px;
+  left: 580px;
+
+  font-weight: bold;
+  font-size: x-large;
+  text-decoration: underline;
+}
+
+.page-footer { 
+  position: absolute;
+  top: 1040px;
+  /* left: 50px; */
+}
+
+.tooltip-label {
+  font-weight: 500;
+  font-size: 10px;
+  color: #888;
+}
+.wrapper {
+  display:flex;
+  align-items: center;
+}
+.map {
+  padding: 1rem 1rem;
+}
+
+.item1 {
+  padding:2px;
+}
+
+.aligned-section {
+  display: flex;
+  align-items: center;
+} 
+
+.reset-button {
+  position: absolute;
+  top: 20px;
+  left: 1580px;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+}
+
+.checkboxes {
+  position: relative;
+}
+
+#checkboxes label {
+  float: left;
+}
+#checkboxes ul {
+  margin: 0;
+  list-style: none;
+  float: left;
+}

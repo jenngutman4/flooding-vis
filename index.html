@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interactive map with Leaflet</title>
+    <link rel="icon" href="data:;base64,iVBORwOKGO=" />
+    <link rel="stylesheet" href="css/leaflet.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+	
+	<!-- <div id="my-map" class="map"> -->
+        <!-- <div id="map-legend" class="map-legend"></div> -->
+    <!-- </div> -->
+    
+    
+    <div class="wrapper">
+            <div id="my-map" class="map">
+                <!-- <div id="map-legend" class="map-legend"></div> -->
+            </div>
+            
+            <div id = "controls">
+                <!-- <div id = "data-dropdown">
+                    <label for="cars">Choose a dataset:</label>
+                        <select name="data" id="data" onchange="changeDataset(this.value)">
+                            <option value="colabRoots">Colab Flood Roots</option>
+                            <option value="colab">Colab Flood</option>
+                            <option value="flood100Roots">100 Year Flood Roots</option>
+                            <option value="flood100">100 Year Flood</option>
+                        </select>
+                </div> -->
+                <div id="legend-container">
+                    <svg id="my_dataviz" height=300 width=350></svg>
+                </div>
+                
+                <div id="checkboxes">
+                  <!-- <label>some label</label> -->
+                  <ul>
+                    <li><input type="checkbox" id="floodPolygon" onClick="leafletMap.showPolygons(0)"> Show Flooded Area</li>
+                    <li><input type="checkbox" id="electricPolygons" onClick="leafletMap.showPolygons(1)"> Show Electric Service Polygons</li>
+                    <li><input type="checkbox"id="medicalPolygons" onClick="leafletMap.showPolygons(2)"> Show Medical Service Polygons</li>
+                    <li><input type="checkbox"id="waterPolygons" onClick="leafletMap.showPolygons(3)"> Show Water Service Polygons</li>
+                    <li><input type="checkbox"id="flood100Polygons" onClick="leafletMap.showPolygons(4)"> Show 100 Year Flood</li>
+                  </ul>
+                </div>
+            </div>
+            
+    </div>
+
+    <div> 
+        <label for="rootSelect">Choose a root:</label>
+        <select name="rootSelect" id="rootSelect" onchange="changeTree(this.value)"></select>
+
+
+        <svg id = "tree"></svg>
+    </div>
+
+
+    
+    <script src="js/d3.v6.min.js"></script>
+    <script src="js/tree.js"></script>
+    <!-- <script src="js/d3-legend.min.js"></script> -->
+    <script src="js/leaflet.js"></script>
+    <script src="js/FEMA_Floodway_0.5-mile_buffer_4326.js"></script>
+    <script src="js/data_power-station_voronoi_clipped.js"></script>
+    <script src="js/CSNA_dh_dissolved_4326_all-polygon.js"></script>
+    <script src="js/data_watertower_voronoi_clipped_4326-polygon.js"></script>
+    <script src="js/Ohio_100_year_flood_Zones_shape_only.js"></script>
+    <script src="js/Map.SelectArea.min.js"></script>
+    <script src="js/leafletMap.js"></script>
+    <script src="js/main.js"></script>
+
+    <div id="tooltip"></div>
+
+
+</body>
+</html>
