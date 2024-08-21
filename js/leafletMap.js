@@ -79,14 +79,28 @@ class LeafletMap {
 		console.log(e.bounds.toBBoxString()); // lon, lat, lon, lat
 		vis.filterData(e.bounds.toBBoxString());
 	});
-	
+
+	vis.dynamicPolygonLayer = L.geoJSON().addTo(vis.theMap);
+	vis.polygons = [];
+
+	medicalPolygons.features.forEach(d => d['properties'] = {color: "#FF0000"});
+	waterPolygons.features.forEach(d => d['properties'] = {color: "#0000FF"});
+	electricPolygons.features.forEach(d => d['properties'] = {color: "#FFFF00"});
+
+	console.log(electricPolygons);
+		
 	L.control.layers(vis.basemaps).addTo(vis.theMap);
 
-	vis.floodPolygon = new L.geoJSON(floodPolygon, {style: {color: "#00FFFF", "fillOpacity": 0.25}});
-	vis.electricPolygons = new L.geoJSON(electricPolygons, {style: {color: "#FFFF00", "fillOpacity": 0}});
-	vis.medicalPolygons = new L.geoJSON(medicalPolygons, {style: {color: "#FF0000", "fillOpacity": 0}});
-	vis.waterPolygons = new L.geoJSON(waterPolygons, {style: {color: "#0000FF", "fillOpacity": 0}});
-	vis.flood100Polygons = new L.geoJSON(flood_100_polygons, {style: {color: "#00FF00", "fillOpacity": 0.25}});
+	
+	// vis.dynamicPolygonLayer.addData(waterPolygons.features[2]);
+	// vis.dynamicPolygonLayer.addData(medicalPolygons.features[2]);
+	// vis.dynamicPolygonLayer.addData(medicalPolygons.features[2]);
+
+	vis.floodPolygon = new L.geoJSON(floodPolygon.geometries, {style: {color: "#00FFFF", "fillOpacity": 0.25}});
+	vis.electricPolygons = new L.geoJSON(electricPolygons.features, {style: {color: "#FFFF00", "fill": null}});
+	vis.medicalPolygons = new L.geoJSON(medicalPolygons.features, {style: {color: "#FF0000", "fill": null}});
+	vis.waterPolygons = new L.geoJSON(waterPolygons.features, {style: {color: "#0000FF", "fill": null}});
+	vis.flood100Polygons = new L.geoJSON(flood_100_polygons.geometries, {style: {color: "#00FF00", "fillOpacity": 0.25}});
 
 	vis.layerGroup = new L.LayerGroup();
 	vis.layerGroup.addTo(vis.theMap);
@@ -143,22 +157,28 @@ class LeafletMap {
                         //Finally, the returned conversion produces an x and y point. We have to select the the desired one using .x or .y
                         .attr("cx", d => vis.theMap.latLngToLayerPoint([d.Y,d.X]).x)
                         .attr("cy", d => vis.theMap.latLngToLayerPoint([d.Y,d.X]).y) 
+                        .attr("class", function(d,i) {return ("map_").concat(d.UFOKN_ID);})
                         .attr("r", d => (d.ROOT > 0) ? 10 : 5)
                         .on('mouseover', function(event,d) { //function to add mouseover event
                             d3.select(this).transition() //D3 selects the object we have moused over in order to perform operations on it
                             //   .duration('150') //how long we are transitioning between the two states (works like keyframes)
                             //   .attr("fill", "red") //change the fill
                             	.attr('r', d => (d.ROOT > 0) ? 12 : 7); //change radius
+                            d3.select(".tree_".concat(d.UFOKN_ID)).attr('r', 7);
+                            
+                            if (d.ROOT > 0) {
+                            	vis.updatePolygon(d, false);
+                            }
+
 
                             //create a tool tip
                             d3.select('#tooltip')
                                 .style('display', 'block')
                                 .style('z-index', 1000000)
                                   // Format number with million and thousand separator
-                                .html(`<div class="tooltip-label"><l> ID: ${d.UFOKN_ID}</l><br>
-										<l>Water Poly: ${d.WATER_POLY}</l><br>
-										<l>Power Poly: ${d.POWER_POLY}</l><br>
-										<l>Med Poly: ${d.MED_POLY}</l></div>`);
+                                .html(`<div class="tooltip-label"><l>Type: ${d.Description}</l><br>
+                                		<l> ID: ${d.UFOKN_ID}</l><br>
+                                		<l> Address: ${d.Address}</l></div>`);
 
                           })                        
                         .on('mousemove', (event) => {
@@ -167,7 +187,7 @@ class LeafletMap {
                              .style('left', (event.pageX + 10) + 'px')   
                               .style('top', (event.pageY + 10) + 'px');
                          })              
-                        .on('mouseleave', function() { //function to add mouseover event
+                        .on('mouseleave', function(event, d) { //function to add mouseover event
                             d3.select(this).transition() //D3 selects the object we have moused over in order to perform operations on it
                               .duration('150') //how long we are transitioning between the two states (works like keyframes)
                               .attr("fill", function(d){
@@ -186,7 +206,13 @@ class LeafletMap {
 									})
                               .attr('r', d => (d.ROOT > 0) ? 10 : 5) //change radius
 
+                            if (d.ROOT > 0 ) {
+                            	vis.polygons.pop();
+                        		vis.updatePolygon(null, false);
+                        	}
+
                             d3.select('#tooltip').style('display', 'none');//turn off the tooltip
+                            d3.select(".tree_".concat(d.UFOKN_ID)).attr('r', 5);
 
                           })
                         .on('dblclick', (event, d) => {
@@ -291,7 +317,16 @@ class LeafletMap {
 	}
 
     //want to see how zoomed in you are? 
-    // console.log(vis.map.getZoom()); //how zoomed am I
+    console.log(vis.theMap.getZoom()); //how zoomed am I
+    
+    
+
+    if (vis.theMap.getZoom() < 13) {
+    	vis.dataShown = vis.data.filter(d => d.ROOT > 0);
+    }
+    else {
+    	vis.dataShown = vis.data.slice();
+    }
     
     //want to control the size of the radius to be a certain number of meters? 
     //vis.radiusSize = 3; 
@@ -303,7 +338,7 @@ class LeafletMap {
    
    //redraw based on new zoom- need to recalculate on-screen position
 	vis.Dots = vis.svg.selectAll('circle')
-                    .data(vis.data) 
+                    .data(vis.dataShown) 
                     .join('circle')
                         .attr("fill", function(d){
 							switch(vis.colorType)
@@ -320,27 +355,34 @@ class LeafletMap {
 							}
 							})
                         .attr("stroke", "black")
+                        //.style("opacity", d => (d.ROOT > 0) ? 1 : 0.5) 
+
                         //Leaflet has to take control of projecting points. Here we are feeding the latitude and longitude coordinates to
                         //leaflet so that it can project them on the coordinates of the view. Notice, we have to reverse lat and lon.
                         //Finally, the returned conversion produces an x and y point. We have to select the the desired one using .x or .y
                         .attr("cx", d => vis.theMap.latLngToLayerPoint([d.Y,d.X]).x)
                         .attr("cy", d => vis.theMap.latLngToLayerPoint([d.Y,d.X]).y) 
+                        .attr("class", function(d,i) {return ("map_").concat(d.UFOKN_ID);})
                         .attr("r", d => (d.ROOT > 0) ? 10 : 5)
                         .on('mouseover', function(event,d) { //function to add mouseover event
                             d3.select(this).transition() //D3 selects the object we have moused over in order to perform operations on it
                               .duration('150') //how long we are transitioning between the two states (works like keyframes)
                               //.attr("fill", "red") //change the fill
                               .attr('r', d => (d.ROOT > 0) ? 12 : 7); //change radius
+                            d3.select(".tree_".concat(d.UFOKN_ID)).attr('r', 7);
+
+                            if (d.ROOT > 0) {
+                            	vis.updatePolygon(d, false);
+                            }
 
                             //create a tool tip
                             d3.select('#tooltip')
                                 .style('display', 'block')
                                 .style('z-index', 1000000)
                                   // Format number with million and thousand separator
-                                .html(`<div class="tooltip-label"><l> ID: ${d.UFOKN_ID}</l><br>
-										<l>Water Poly: ${d.WATER_POLY}</l><br>
-										<l>Power Poly: ${d.POWER_POLY}</l><br>
-										<l>Med Poly: ${d.MED_POLY}</l></div>`);
+                                .html(`<div class="tooltip-label"><l>Type: ${d.Description}</l><br>
+                                		<l> ID: ${d.UFOKN_ID}</l><br>
+                                		<l> Address: ${d.Address}</l></div>`);
 
                           })
                         .on('mousemove', (event) => {
@@ -349,7 +391,7 @@ class LeafletMap {
                              .style('left', (event.pageX + 10) + 'px')   
                               .style('top', (event.pageY + 10) + 'px');
                          })              
-                        .on('mouseleave', function() { //function to add mouseover event
+                        .on('mouseleave', function(event, d) { //function to add mouseover event
                             d3.select(this).transition() //D3 selects the object we have moused over in order to perform operations on it
                               .duration('150') //how long we are transitioning between the two states (works like keyframes)
                               .attr("fill", function(d){
@@ -363,12 +405,17 @@ class LeafletMap {
 											return vis.colorScaleRoot(d.ROOT);
 											break;
 										default:
-											console.log('the fuck you doing');
+											console.log('nope');
 									}
 									})
                               .attr('r', d => (d.ROOT > 0) ? 10 : 5) //change radius
+                            if (d.ROOT > 0 ) {
+                            	vis.polygons.pop();
+                        		vis.updatePolygon(null, false);
+                        	}
 
                             d3.select('#tooltip').style('display', 'none');//turn off the tooltip
+                            d3.select(".tree_".concat(d.UFOKN_ID)).attr('r', 5);
 
                           })
                         .on('dblclick', (event, d) => {
@@ -383,6 +430,8 @@ class LeafletMap {
                         .on('click', (event, d) => {
                         	if (d.ROOT > 0) {
                         		openTreeNode(d.UFOKN_ID);
+                        		//document.getElementById('rootSelect').value = d.UFOKN_ID;
+                        		//console.log(document.getElementById('rootSelect').value);
                         		//addPolygonAssets(d);
                         	}
                         })
@@ -460,6 +509,45 @@ class LeafletMap {
 	  	}
 	}
   	
+
+  }
+
+  updatePolygon(asset, reset) {
+  	let vis = this;
+
+  	console.log(asset);
+
+
+  	vis.dynamicPolygonLayer.clearLayers();
+
+  	if (asset) {
+  	
+	  	if (asset.ROOT == 1) {
+	  		vis.polygons.push(waterPolygons.features[asset.WATER_POLY]);
+	  	}
+	  	if (asset.ROOT == 2) {
+	  		vis.polygons.push(medicalPolygons.features[asset.MED_POLY]);
+	  	}
+	  	if (asset.ROOT == 3) {
+	  		vis.polygons.push(electricPolygons.features[asset.POWER_POLY]);
+	  	}
+	  	console.log(vis.polygons);
+
+	 }
+	 else if (reset == true) {
+	 	vis.polygons.splice(0, vis.polygons.length);
+	 }
+
+	 vis.dynamicPolygonLayer.addData(vis.polygons);
+
+	 vis.dynamicPolygonLayer.setStyle(function(feature) {
+  		console.log(feature);
+	    switch(feature.properties.color) {
+	        case '#0000FF': return {color: '#0000FF', fill: null};
+	        case '#FFFF00': return {color: '#FFFF00', fill: null};
+	        case '#FF0000': return {color: '#FF0000', fill: null};
+	   	} 
+	 });
 
   }
   
