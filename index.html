@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Flooding Visualization</title>
+    <title>Interactive map with Leaflet</title>
     <link rel="icon" href="data:;base64,iVBORwOKGO=" />
     <link rel="stylesheet" href="css/leaflet.css">
     <link rel="stylesheet" href="css/style.css">
@@ -47,11 +47,25 @@
     </div>
 
     <div> 
-        <label for="rootSelect">Choose a root:</label>
+        <label for="rootSelect">Select a directly impacted site: </label>
         <select name="rootSelect" id="rootSelect" onchange="changeTree(this.value)"></select>
 
+    </div>
 
+    <div>
         <svg id = "tree"></svg>
+    </div>
+
+    <div>
+        <table>
+            <tr>
+                <th>Flooded Assets (Total/Critical)</th>
+                <th>One Step Removed (Total/Critical)</th>
+                <th>Two Steps Removed (Total/Critical)</th>
+            </tr>
+            <tr id = "selectedCascade"></tr>
+            <tr id = "totalRow"></tr>
+        </table>
     </div>
 
 

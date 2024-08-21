@@ -104,6 +104,48 @@ class Tree {
 	        .attr("transform", d => `translate(${source.y0},${source.x0})`)
 	        .attr("fill-opacity", 0)
 	        .attr("stroke-opacity", 0)
+	      
+	    vis.nodeEnter.append("circle")
+	        .attr("r", 5)
+	        .attr("fill", d => vis.colorScaleType(d.data.ROOT))
+	        .attr("fill-opacity", d => d._children ? 1 : 0.5)
+	        .attr("stroke", "black")
+	        .attr("stroke-width", 1)
+	        .attr("class", function(d,i) {return ("tree_").concat(d.data.name);})
+	        .on("mouseover", (event, d) => {
+	        	//console.log(event);
+	        	//console.log(d.data.name);
+	        	//highlightRoot(d.data.name);
+	        	d3.select(".tree_".concat(d.data.name)).attr('r', 7);
+	        	d3.selectAll(".map_".concat(d.data.name)).attr('r', 12);
+
+	        	console.log(d.data.ROOT);
+
+	        	if (d.data.ROOT > 0) {
+
+		        	//create a tool tip
+	                d3.select('#tooltip')
+	                    .style('display', 'block')
+	                    .style('z-index', 1000000)
+	                    // Format number with million and thousand separator
+	                     .html(`<div class="tooltip-label"><l>Type: ${d.Description}</l><br>
+	                                		<l> ID: ${d.UFOKN_ID}</l><br></div>`);
+	                
+	                console.log(d3.select(".map_".concat(d.data.name)));
+	                console.log(d3.select(".map_".concat(d.data.name)));
+
+	                d3.select('#tooltip')
+	                    //.style('left', (event.pageX + 10) + 'px')   
+	                    //.style('top', (event.pageY + 10) + 'px');
+	                    .style('left', (Number(d3.select(".map_".concat(d.data.name)).attr("cx")) + 10) + 'px')   
+	                    .style('top', (Number(d3.select(".map_".concat(d.data.name)).attr("cy")) + 10) + 'px');
+	             }
+	        })
+	        .on("mouseleave", (event, d) => {
+	        	d3.select(".tree_".concat(d.data.name)).attr('r', 5);
+	        	d3.selectAll(".map_".concat(d.data.name)).attr('r', 10);
+	        	d3.select('#tooltip').style('display', 'none');//turn off the tooltip
+	        })
 	        .on("click", (event, d) => {
 	          if (d.children) {
 	          	vis.closeNode(d.data.name);
@@ -113,18 +155,22 @@ class Tree {
 	      	  }
 	        });
 
-	    vis.nodeEnter.append("circle")
-	        .attr("r", 5)
-	        .attr("fill", d => vis.colorScaleType(d.data.ROOT))
-	        .attr("fill-opacity", d => d._children ? 1 : 0.5)
-	        .attr("stroke", "black")
-	        .attr("stroke-width", 1);
-
 	    vis.nodeEnter.append("text")
 	        .attr("dy", "0.31em")
 	        .attr("x", d => d._children ? -6 : 6)
 	        .attr("text-anchor", d => d._children ? "end" : "start")
-	        .text(d => d.data.name)
+	        .text(function(d) {
+	        	switch(d.data.ROOT) {
+	        		case 0: return(d.data.name);
+	        			break;
+	        		case 1: return("Water Utility");
+	        			break;
+	        		case 2: return("Hospital");
+	        			break;
+	        		case 3: return("Power Station")
+	        			break;
+	        		default: return("Help");
+	        	}})
 	        .attr("stroke-linejoin", "round")
 	        .attr("stroke-width", 3)
 	        .attr("text-color", d => vis.colorScaleType(d.data.ROOT))

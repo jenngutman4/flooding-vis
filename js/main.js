@@ -38,7 +38,7 @@ d3.csv('data/asset_data2.csv')
 
 
 		////////// CHANGE FLOOD ///////////
-		floodRoot = allAssets.filter(asset => asset.ROOT > 0 && asset.Flooded > 0);
+		floodRoot = allAssets.filter(asset => asset.ROOT > 0 && asset.Flooded == 1);
 		//floodRoot = allAssets.filter(asset => asset.ROOT > 0 && asset.Flooded100 > 0);
 		
 		
@@ -96,6 +96,10 @@ d3.csv('data/asset_data2.csv')
 		//Test Flooded
 		//filteredAssets = allAssets.filter(d => (d.Flooded > 0));
 		//filteredAssets = allAssets.slice(0);
+
+		configureTable();
+		updateTable();
+
 		
 		leafletMap = new LeafletMap({ parentElement: '#my-map', legendElement: '#map-legend' }, filteredAssets, null);
 		tree = new Tree({'parentElement': '#tree'}, hierarchyData);
@@ -230,6 +234,7 @@ function addPolygonAssets(asset) {
   //console.log(filteredAssets);
   filteredAssets = removeDuplicates(filteredAssets);
   console.log(filteredAssets);
+ 	leafletMap.updatePolygon(asset, false);
   updateAllCharts(filteredAssets); 
 }
 
@@ -256,8 +261,11 @@ function removePolygonAssets(asset) {
 		
 	// });
 
+	leafletMap.updatePolygon(null, true);
+
 	let openRoots = openAssets.filter(item => item.open);
 	console.log(openRoots);	
+
 
 	//console.log(document.getElementById('rootSelect').value);
 
@@ -274,8 +282,16 @@ function removePolygonAssets(asset) {
 }
 
 function openTreeNode(id) {
-	console.log(id);
-	tree.openNode(id);
+	//console.log(id);
+	//console.log(document.getElementById('rootSelect').options);
+	let id_index = [...new Set(floodRoot.map(item => item.UFOKN_ID))].indexOf(id);
+	if (id_index >= 0) {
+		changeTree(id_index);
+		tree.openNode(id);
+	}
+	else {
+		tree.openNode(id);
+	}
 }
 
 function closeTreeNode(id) {
@@ -284,6 +300,21 @@ function closeTreeNode(id) {
 }
 
 function updateAllCharts(data) {
+	// SORT DATA BEFORE PASSING TO MAP
+	data.sort((a, b) => {
+	  //const titleA = a.title.toUpperCase(); // ignore upper and lowercase
+	  //const titleB = b.title.toUpperCase(); // ignore upper and lowercase
+	  if (a.ROOT < b.ROOT) {
+	    return -1;
+	  }
+	  if (a.ROOT > b.ROOT) {
+	    return 1;
+	  }
+
+	  // names must be equal
+	  return 0;
+	});
+
   leafletMap.data = data;
   leafletMap.updateVis();
 }
@@ -304,13 +335,74 @@ function changeTree(index) {
 	affectedCritAssets = [...new Set(floodRoot.map(item => item.UFOKN_ID))];
 	affectedAssets = [...new Set(floodRoot.map(item => item.UFOKN_ID))];
 	updateAllCharts(filteredAssets); 
+	leafletMap.updatePolygon(null, true);
 
 	hierarchyData.pop();
 	hierarchyData.push({name: floodRoot[index].UFOKN_ID, ROOT: floodRoot[index].ROOT, WATER_POLY: floodRoot[index].WATER_POLY, MED_POLY: floodRoot[index].MED_POLY, POWER_POLY: floodRoot[index].POWER_POLY, children: []});
 	hierarchyData[0].children = (getChildren(floodRoot[index]));
 
+	updateTable();
+
 	tree.getData(0);
 }
+
+// function highlightRoot(assetName) {
+// 	console.log(".".concat(assetName));
+// 	console.log(d3.select(".".concat(assetName)));
+// 	d3.select(".".concat(assetName)).attr('r', 12);
+// }
+
+function configureTable() {
+	const totalCounts = [];
+	const totalRoots = [];
+
+	totalCounts.push(allAssets.reduce((acc, cur) => cur.Flooded == 0 ? ++acc : acc, 0));
+	totalCounts.push(allAssets.reduce((acc, cur) => cur.Flooded == 1 ? ++acc : acc, 0));
+	totalCounts.push(allAssets.reduce((acc, cur) => cur.Flooded == 2 ? ++acc : acc, 0));
+	totalCounts.push(allAssets.reduce((acc, cur) => cur.Flooded == 3 ? ++acc : acc, 0));
+	
+	let rootsArr = allAssets.filter(asset => asset.ROOT > 0);
+
+	totalRoots.push(rootsArr.reduce((acc, cur) => cur.Flooded == 0 ? ++acc : acc, 0));
+	totalRoots.push(rootsArr.reduce((acc, cur) => cur.Flooded == 1 ? ++acc : acc, 0));
+	totalRoots.push(rootsArr.reduce((acc, cur) => cur.Flooded == 2 ? ++acc : acc, 0));
+	totalRoots.push(rootsArr.reduce((acc, cur) => cur.Flooded == 3 ? ++acc : acc, 0));
+
+	//console.log(totalCounts);
+	//console.log(totalRoots);
+
+	d3.select('#totalRow').html(`<td>${totalCounts[1]} total/${totalRoots[1]} critical</td>
+                <td>${totalCounts[2]} total/${totalRoots[2]} critical</td>
+                <td>${totalCounts[3]} total/${totalRoots[3]} critical</td>`);
+}
+
+function updateTable() {
+	//console.log(hierarchyData);
+	let secondLevel = 0;
+
+	let firstLevel = hierarchyData[0].children;
+	if (firstLevel.length > 1) {
+		firstLevel.forEach(d =>{
+			if (d.ROOT > 0) {
+				if (d.children.length > 0) {
+					//console.log(d.children[0].name);
+					secondLevel += parseInt(d.children[0].name);
+				}
+			}
+		});
+		//console.log(secondLevel);
+		//let firstLevelTotal = 
+		d3.select('#selectedCascade').html(`<td>${hierarchyData[0].name}</td>
+	                <td>${parseInt(hierarchyData[0].children[0].name) + hierarchyData[0].children.length - 1} total/${hierarchyData[0].children.length - 1} critical</td>
+	                <td>${secondLevel} total/${0} critical</td>`);
+	}
+	else {
+		d3.select('#selectedCascade').html(`<td>${hierarchyData[0].name}</td>
+	                <td>${hierarchyData[0].children[0].name} total/${0} critical</td>
+	                <td>${0} total/${0} critical</td>`);
+	}
+}
+
 
 function addLegend() {
 	var svg = d3.select("#my_dataviz");
@@ -320,9 +412,9 @@ function addLegend() {
 	svg.append("circle").attr("cx",50).attr("cy",160).attr("r", 10).style("fill", "#FF0000").style("stroke", "#000000");
 	svg.append("circle").attr("cx",50).attr("cy",190).attr("r", 10).style("fill", "#FFFF00").style("stroke", "#000000");
 	svg.append("circle").attr("cx",50).attr("cy",220).attr("r", 5).style("fill", "#FFFFFF").style("stroke", "#000000");
-	svg.append("text").attr("x", 70).attr("y", 130).text("Water Root").style("font-size", "15px").attr("alignment-baseline","middle");
-	svg.append("text").attr("x", 70).attr("y", 160).text("Medical Root").style("font-size", "15px").attr("alignment-baseline","middle");
-	svg.append("text").attr("x", 70).attr("y", 190).text("Power Root").style("font-size", "15px").attr("alignment-baseline","middle");
+	svg.append("text").attr("x", 70).attr("y", 130).text("Water Utility").style("font-size", "15px").attr("alignment-baseline","middle");
+	svg.append("text").attr("x", 70).attr("y", 160).text("Hospital").style("font-size", "15px").attr("alignment-baseline","middle");
+	svg.append("text").attr("x", 70).attr("y", 190).text("Power Station").style("font-size", "15px").attr("alignment-baseline","middle");
 	svg.append("text").attr("x", 70).attr("y", 220).text("Residential Asset").style("font-size", "15px").attr("alignment-baseline","middle");
 }
 
