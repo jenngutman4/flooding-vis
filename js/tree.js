@@ -17,7 +17,7 @@ class Tree {
 
 		vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
    
-		vis.dx = 14;
+		vis.dx = 20;
 
 		vis.colorScaleType = d3.scaleOrdinal()
 			.domain([0, 1, 2, 3])
@@ -106,7 +106,7 @@ class Tree {
 	        .attr("stroke-opacity", 0)
 	      
 	    vis.nodeEnter.append("circle")
-	        .attr("r", 5)
+	        .attr("r", 8)
 	        .attr("fill", d => vis.colorScaleType(d.data.ROOT))
 	        .attr("fill-opacity", d => d._children ? 1 : 0.5)
 	        .attr("stroke", "black")
@@ -116,7 +116,7 @@ class Tree {
 	        	//console.log(event);
 	        	//console.log(d.data.name);
 	        	//highlightRoot(d.data.name);
-	        	d3.select(".tree_".concat(d.data.name)).attr('r', 7);
+	        	d3.select(".tree_".concat(d.data.name)).attr('r', 10);
 	        	d3.selectAll(".map_".concat(d.data.name)).attr('r', 12);
 
 	        	console.log(d.data.ROOT);
@@ -125,24 +125,22 @@ class Tree {
 
 		        	//create a tool tip
 	                d3.select('#tooltip')
-	                    .style('display', 'block')
 	                    .style('z-index', 1000000)
 	                    // Format number with million and thousand separator
-	                     .html(`<div class="tooltip-label"><l>Type: ${d.Description}</l><br>
-	                                		<l> ID: ${d.UFOKN_ID}</l><br></div>`);
-	                
-	                console.log(d3.select(".map_".concat(d.data.name)));
-	                console.log(d3.select(".map_".concat(d.data.name)));
+	                     .html(`<div class="tooltip-label"><l>Type: ${d.data.AssetInfo}</l><br>
+	                                		<l> ID: ${d.data.name}</l><br>
+	                                		<l> Address: ${d.data.Address}</l><br></div>`);
 
 	                d3.select('#tooltip')
 	                    //.style('left', (event.pageX + 10) + 'px')   
 	                    //.style('top', (event.pageY + 10) + 'px');
-	                    .style('left', (Number(d3.select(".map_".concat(d.data.name)).attr("cx")) + 10) + 'px')   
-	                    .style('top', (Number(d3.select(".map_".concat(d.data.name)).attr("cy")) + 10) + 'px');
+	                    .style('left', (Number(d3.select(".map_".concat(d.data.name)).attr("cx")) + leafletMap.dragOffset.x + 10) + 'px')   
+	                    .style('top', (Number(d3.select(".map_".concat(d.data.name)).attr("cy")) + leafletMap.dragOffset.y + 10) + 'px')
+	                    .style('display', 'block')
 	             }
 	        })
 	        .on("mouseleave", (event, d) => {
-	        	d3.select(".tree_".concat(d.data.name)).attr('r', 5);
+	        	d3.select(".tree_".concat(d.data.name)).attr('r', 8);
 	        	d3.selectAll(".map_".concat(d.data.name)).attr('r', 10);
 	        	d3.select('#tooltip').style('display', 'none');//turn off the tooltip
 	        })
@@ -157,17 +155,35 @@ class Tree {
 
 	    vis.nodeEnter.append("text")
 	        .attr("dy", "0.31em")
-	        .attr("x", d => d._children ? -6 : 6)
+	        .attr("x", d => d._children ? 4 : -3)
 	        .attr("text-anchor", d => d._children ? "end" : "start")
 	        .text(function(d) {
 	        	switch(d.data.ROOT) {
-	        		case 0: return(d.data.name);
+	        		case 0: return("-\u00A0\u00A0\u00A0" + d.data.name + " assets");
 	        			break;
-	        		case 1: return("Water Utility");
+	        		case 1: 
+	        			if (d._children){
+	        				return("Water Utility\u00A0\u00A0\u00A0+");
+	        			}
+	        			else {
+	        				return("-\u00A0\u00A0\u00A0Water Utility");
+	        			}
 	        			break;
-	        		case 2: return("Hospital");
+	        		case 2: 
+	        			if (d._children){
+	        				return("Hospital\u00A0\u00A0\u00A0+");
+	        			}
+	        			else {
+	        				return("-\u00A0\u00A0\u00A0Hospital");
+	        			}
 	        			break;
-	        		case 3: return("Power Station")
+	        		case 3: 
+	        			if (d._children){
+	        				return("Power Station\u00A0\u00A0\u00A0+");
+	        			}
+	        			else {
+	        				return("-\u00A0\u00A0\u00A0Power Station");
+	        			}
 	        			break;
 	        		default: return("Help");
 	        	}})
