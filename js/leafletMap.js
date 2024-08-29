@@ -134,6 +134,7 @@ class LeafletMap {
     vis.overlay = d3.select(vis.theMap.getPanes().overlayPane)
     vis.svg = vis.overlay.select('svg').attr("pointer-events", "auto")
 
+
     vis.Dots = vis.svg.selectAll('circle')
                     .data(vis.data) 
                     .join('circle')
@@ -164,8 +165,9 @@ class LeafletMap {
                             //   .duration('150') //how long we are transitioning between the two states (works like keyframes)
                             //   .attr("fill", "red") //change the fill
                             	.attr('r', d => (d.ROOT > 0) ? 12 : 7); //change radius
-                            d3.select(".tree_".concat(d.UFOKN_ID)).attr('r', 7);
-                            
+                            d3.select(".tree_".concat(d.UFOKN_ID)).attr('r', 10);
+
+
                             if (d.ROOT > 0) {
                             	vis.updatePolygon(d, false);
                             }
@@ -176,7 +178,7 @@ class LeafletMap {
                                 .style('display', 'block')
                                 .style('z-index', 1000000)
                                   // Format number with million and thousand separator
-                                .html(`<div class="tooltip-label"><l>Type: ${d.Description}</l><br>
+                                .html(`<div class="tooltip-label"><l>Type: ${d.AssetInfo}</l><br>
                                 		<l> ID: ${d.UFOKN_ID}</l><br>
                                 		<l> Address: ${d.Address}</l></div>`);
 
@@ -212,7 +214,7 @@ class LeafletMap {
                         	}
 
                             d3.select('#tooltip').style('display', 'none');//turn off the tooltip
-                            d3.select(".tree_".concat(d.UFOKN_ID)).attr('r', 5);
+                            d3.select(".tree_".concat(d.UFOKN_ID)).attr('r', 8);
 
                           })
                         .on('dblclick', (event, d) => {
@@ -226,7 +228,10 @@ class LeafletMap {
                         })
                         .on('click', (event, d) => {
                         	if (d.ROOT > 0) {
+                        		console.log(d);
+                        		//vis.polygons.push(d);
                         		openTreeNode(d.UFOKN_ID);
+                        		vis.updatePolygon(d, false);
                         		//addPolygonAssets(d);
                         	}
                         })
@@ -259,6 +264,15 @@ class LeafletMap {
       vis.updateVis();
     });
 	
+	vis.dragOffset = {x: 0, y:0 };
+	vis.theMap.on('dragend', function(event, d) {
+    	console.log("hello");
+    	vis.dragOffset.x = event.sourceTarget._newPos.x;
+    	vis.dragOffset.y = event.sourceTarget._newPos.y;
+    	console.log(event.sourceTarget._newPos);
+    	console.log(d);
+    	vis.updateVis();
+    });
 	//brush stuff
 	
 	/*document.addEventListener('mousedown', (e) => {
@@ -369,7 +383,10 @@ class LeafletMap {
                               .duration('150') //how long we are transitioning between the two states (works like keyframes)
                               //.attr("fill", "red") //change the fill
                               .attr('r', d => (d.ROOT > 0) ? 12 : 7); //change radius
-                            d3.select(".tree_".concat(d.UFOKN_ID)).attr('r', 7);
+                            d3.select(".tree_".concat(d.UFOKN_ID)).attr('r', 10);
+
+                            console.log(this);
+                            
 
                             if (d.ROOT > 0) {
                             	vis.updatePolygon(d, false);
@@ -380,7 +397,7 @@ class LeafletMap {
                                 .style('display', 'block')
                                 .style('z-index', 1000000)
                                   // Format number with million and thousand separator
-                                .html(`<div class="tooltip-label"><l>Type: ${d.Description}</l><br>
+                                .html(`<div class="tooltip-label"><l>Type: ${d.AssetInfo}</l><br>
                                 		<l> ID: ${d.UFOKN_ID}</l><br>
                                 		<l> Address: ${d.Address}</l></div>`);
 
@@ -415,7 +432,7 @@ class LeafletMap {
                         	}
 
                             d3.select('#tooltip').style('display', 'none');//turn off the tooltip
-                            d3.select(".tree_".concat(d.UFOKN_ID)).attr('r', 5);
+                            d3.select(".tree_".concat(d.UFOKN_ID)).attr('r', 8);
 
                           })
                         .on('dblclick', (event, d) => {
@@ -429,7 +446,11 @@ class LeafletMap {
                         })
                         .on('click', (event, d) => {
                         	if (d.ROOT > 0) {
+                        		//vis.polygons.push(d);
+                        		console.log(d);
+                        		
                         		openTreeNode(d.UFOKN_ID);
+                        		vis.updatePolygon(d, false);
                         		//document.getElementById('rootSelect').value = d.UFOKN_ID;
                         		//console.log(document.getElementById('rootSelect').value);
                         		//addPolygonAssets(d);
@@ -515,7 +536,7 @@ class LeafletMap {
   updatePolygon(asset, reset) {
   	let vis = this;
 
-  	console.log(asset);
+  	//console.log(asset);
 
 
   	vis.dynamicPolygonLayer.clearLayers();
@@ -531,7 +552,7 @@ class LeafletMap {
 	  	if (asset.ROOT == 3) {
 	  		vis.polygons.push(electricPolygons.features[asset.POWER_POLY]);
 	  	}
-	  	console.log(vis.polygons);
+	  	//console.log(vis.polygons);
 
 	 }
 	 else if (reset == true) {
@@ -541,7 +562,7 @@ class LeafletMap {
 	 vis.dynamicPolygonLayer.addData(vis.polygons);
 
 	 vis.dynamicPolygonLayer.setStyle(function(feature) {
-  		console.log(feature);
+  		//console.log(feature);
 	    switch(feature.properties.color) {
 	        case '#0000FF': return {color: '#0000FF', fill: null};
 	        case '#FFFF00': return {color: '#FFFF00', fill: null};

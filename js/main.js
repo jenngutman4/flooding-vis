@@ -13,8 +13,8 @@ d3.csv('data/asset_data2.csv')
 	.then(data => {
 		data.forEach(d => {
 			d.X = +d.X;
-      		d.Y = +d.Y;
-      		d.Z = +d.Z;
+      d.Y = +d.Y;
+      d.Z = +d.Z;
 			d.WATER_POLY = +d.WATER_POLY;
 			d.POWER_POLY = +d.POWER_POLY;
 			d.MED_POLY = +d.MED_POLY;
@@ -22,6 +22,8 @@ d3.csv('data/asset_data2.csv')
 			d.Index = +d.Index;
 			d.name = d.UFOKN_ID;
 			d.rootName = '';
+			d.CritChildren = +d.CritChildren;
+			d.TotalChildren = +d.TotalChildren;
 		})
 		console.log(data);
 		allAssets = data;
@@ -41,6 +43,7 @@ d3.csv('data/asset_data2.csv')
 		floodRoot = allAssets.filter(asset => asset.ROOT > 0 && asset.Flooded == 1);
 		//floodRoot = allAssets.filter(asset => asset.ROOT > 0 && asset.Flooded100 > 0);
 		
+		floodRoot.sort((a, b) => (b.CritChildren > a.CritChildren) ? 1 : (b.CritChildren === a.CritChildren) ? ((b.TotalChildren > a.TotalChildren) ? 1 : -1) : -1 )
 		
 
 
@@ -67,7 +70,7 @@ d3.csv('data/asset_data2.csv')
 		// 	}
 		// })
 
-		hierarchyData.push({name: floodRoot[0].UFOKN_ID, ROOT: floodRoot[0].ROOT, WATER_POLY: floodRoot[0].WATER_POLY, MED_POLY: floodRoot[0].MED_POLY, POWER_POLY: floodRoot[0].POWER_POLY, children: []});
+		hierarchyData.push({name: floodRoot[0].UFOKN_ID, ROOT: floodRoot[0].ROOT, WATER_POLY: floodRoot[0].WATER_POLY, MED_POLY: floodRoot[0].MED_POLY, POWER_POLY: floodRoot[0].POWER_POLY, Address: floodRoot[0].Address, AssetInfo: floodRoot[0].AssetInfo, children: []});
 		hierarchyData[0].children = (getChildren(floodRoot[0]));
 		console.log(hierarchyData);
 
@@ -145,7 +148,7 @@ function getChildren(floodRoot) {
 		nextLevelRoots.forEach(asset => affectedCritAssets.push(asset.UFOKN_ID));
 
 		nextLevelRoots.forEach((d, i) => {
-			children.push({name: d.UFOKN_ID, ROOT: d.ROOT, WATER_POLY: d.WATER_POLY, MED_POLY: d.MED_POLY, POWER_POLY: d.POWER_POLY, children: []});
+			children.push({name: d.UFOKN_ID, ROOT: d.ROOT, WATER_POLY: d.WATER_POLY, MED_POLY: d.MED_POLY, POWER_POLY: d.POWER_POLY, Address: d.Address, AssetInfo: d.AssetInfo, children: []});
 			children[i+1].children = getChildren(d);
 		});
 	}
@@ -154,7 +157,7 @@ function getChildren(floodRoot) {
 		nextLevelRoots.forEach(asset => affectedCritAssets.push(asset.UFOKN_ID));
 
 		nextLevelRoots.forEach((d, i) => {
-			children.push({name: d.UFOKN_ID, ROOT: d.ROOT, WATER_POLY: d.WATER_POLY, MED_POLY: d.MED_POLY, POWER_POLY: d.POWER_POLY, children: []});
+			children.push({name: d.UFOKN_ID, ROOT: d.ROOT, WATER_POLY: d.WATER_POLY, MED_POLY: d.MED_POLY, POWER_POLY: d.POWER_POLY, Address: d.Address, AssetInfo: d.AssetInfo, children: []});
 			children[i].children = getChildren(d);
 		});
 
@@ -338,7 +341,7 @@ function changeTree(index) {
 	leafletMap.updatePolygon(null, true);
 
 	hierarchyData.pop();
-	hierarchyData.push({name: floodRoot[index].UFOKN_ID, ROOT: floodRoot[index].ROOT, WATER_POLY: floodRoot[index].WATER_POLY, MED_POLY: floodRoot[index].MED_POLY, POWER_POLY: floodRoot[index].POWER_POLY, children: []});
+	hierarchyData.push({name: floodRoot[index].UFOKN_ID, ROOT: floodRoot[index].ROOT, WATER_POLY: floodRoot[index].WATER_POLY, MED_POLY: floodRoot[index].MED_POLY, POWER_POLY: floodRoot[index].POWER_POLY, Address: floodRoot[index].Address, AssetInfo: floodRoot[index].AssetInfo, children: []});
 	hierarchyData[0].children = (getChildren(floodRoot[index]));
 
 	updateTable();
