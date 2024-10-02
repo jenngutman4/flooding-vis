@@ -7,6 +7,10 @@ let floodRoot = [];
 let leafletMap;
 let tree;
 let hierarchyData = [];
+let waterRootsDict = {};
+let medRootsDict= {};
+let powerRootsDict = {};
+let floodRootID = [];
 
 
 d3.csv('data/asset_data2.csv')
@@ -24,11 +28,54 @@ d3.csv('data/asset_data2.csv')
 			d.rootName = '';
 			d.CritChildren = +d.CritChildren;
 			d.TotalChildren = +d.TotalChildren;
+			d.ServicesLost = Array.prototype.slice.call(d.ServicesLost);
+			d.ServicesLost = d.ServicesLost.slice(1, -1);
+			d.ServicesLost = d.ServicesLost.filter(e => e !== ',');
+			d.ServicesLost = d.ServicesLost.filter(e => e !== ' ');
+			d.ServicesLost.sort();
+			d.ServicesLost = d.ServicesLost.join('');
 		})
 		console.log(data);
 		allAssets = data;
 
 		roots = allAssets.filter(d => (d.ROOT > 0));
+
+		console.log(roots);
+		console.log(roots.filter(d=> d.ROOT == 1));
+		console.log(roots.filter(d=> d.ROOT == 2));
+		console.log(roots.filter(d=> d.ROOT == 3));
+		roots.forEach(d =>{
+			switch(d.ROOT) {
+				case 1:
+					if (waterRootsDict[d.WATER_POLY] == undefined) {
+						Object.defineProperty(waterRootsDict, d.WATER_POLY, {value: [d.UFOKN_ID]});
+						}
+					else {
+						waterRootsDict[d.WATER_POLY].push(d.UFOKN_ID);
+					}
+					break;
+				case 2:
+					if (medRootsDict[d.MED_POLY] == undefined) {
+						Object.defineProperty(medRootsDict, d.MED_POLY, {value: [d.UFOKN_ID]});
+					}
+					else {
+						medRootsDict[d.MED_POLY].push(d.UFOKN_ID);
+					}
+					break;
+				case 3:
+					if (powerRootsDict[d.POWER_POLY] == undefined) {
+						Object.defineProperty(powerRootsDict, d.POWER_POLY, {value: [d.UFOKN_ID], configurable: true});
+					}
+					else {
+						powerRootsDict[d.POWER_POLY].push(d.UFOKN_ID);
+					}
+					break;
+				default:
+			}
+		});
+		console.log(waterRootsDict);
+		console.log(medRootsDict);
+		console.log(powerRootsDict);
 	    
 		
 		//console.log([...new Set(data.map(item => item.UFOKN_ID))]);
@@ -52,7 +99,8 @@ d3.csv('data/asset_data2.csv')
 		affectedCritAssets = [...new Set(floodRoot.map(item => item.UFOKN_ID))];
 		floodRoot.forEach((d, i) => document.getElementById('rootSelect').options[rootSelect.options.length] = new Option(d.UFOKN_ID, i));
 		
-		affectedAssets = [...new Set(floodRoot.map(item => item.UFOKN_ID))];
+		floodRootID = [...new Set(floodRoot.map(item => item.Index))];
+		affectedAssets = floodRootID.slice(0);
 		
 		// floodRoot.forEach((d, i) => {
 		// 	hierarchyData.push({name: d.UFOKN_ID, ROOT: d.ROOT, WATER_POLY: d.WATER_POLY, MED_POLY: d.MED_POLY, POWER_POLY: d.POWER_POLY, children: []});
@@ -82,6 +130,7 @@ d3.csv('data/asset_data2.csv')
 
 
 		affectedAssets = Array.from(new Set(affectedAssets));
+		affectedAssets = affectedAssets.filter(d => !floodRootID.includes(d));
 		console.log(affectedAssets);
 		
 		filteredAssets = floodRoot.slice(0);
@@ -106,6 +155,7 @@ d3.csv('data/asset_data2.csv')
 		
 		leafletMap = new LeafletMap({ parentElement: '#my-map', legendElement: '#map-legend' }, filteredAssets, null);
 		tree = new Tree({'parentElement': '#tree'}, hierarchyData);
+		barchart = new BarChart({parentElement: '#barchart'}, allAssets.filter(d => affectedAssets.includes(d.Index)));
 
 		addLegend();
 	}) 
@@ -134,8 +184,8 @@ function getChildren(floodRoot) {
 	}
 
 	// remove assets already impacted by another root and add new assets to affected
-	nextLevelAssets = nextLevelAssets.filter(asset => affectedAssets.includes(asset.UFOKN_ID) == false);
-	nextLevelAssets.forEach(asset => affectedAssets.push(asset.UFOKN_ID));
+	nextLevelAssets = nextLevelAssets.filter(asset => affectedAssets.includes(asset.Index) == false);
+	nextLevelAssets.forEach(asset => affectedAssets.push(asset.Index));
 
     // get next level of roots
 	nextLevelRoots = nextLevelAssets.filter(asset => asset.ROOT > 0);
@@ -187,6 +237,8 @@ function showPolygonAssets(asset) {
 }
 
 function showRootforBuilding(asset) {
+	leafletMap.addPolylines(null, [], true); 
+
   console.log(asset);
   let buildingRoots = [];
   buildingRoots.push(asset);
@@ -203,6 +255,9 @@ function showRootforBuilding(asset) {
     powerRoots.forEach(d => buildingRoots.push(d));
   } 
   console.log(buildingRoots);
+  buildingRoots.forEach(function (d) {
+  	leafletMap.addPolylines([d], [asset], false);
+  });
   filteredAssets = buildingRoots;
   updateAllCharts(filteredAssets); 
 }
@@ -211,28 +266,33 @@ function addPolygonAssets(asset) {
 	console.log(openAssets);
   //let currRoot = filteredAssets.filter(d => d.ROOT > 0 && d.UFOKN_ID == asset.name);
   console.log(asset);
+  let assetsToAdd = [];
   if (asset.ROOT == 1) {
-    let assetsToAdd = allAssets.filter(d => (d.WATER_POLY == asset.WATER_POLY) && ((d.ROOT == 0) || (d.ROOT == 2)));
+    assetsToAdd = allAssets.filter(d => (d.WATER_POLY == asset.WATER_POLY) && ((d.ROOT == 0) || (d.ROOT == 2)));
     assetsToAdd.forEach(d => {
     	d.rootName = asset.name;
     	filteredAssets.push(d);
     }); 
   }
   else if (asset.ROOT == 2) {
-    let assetsToAdd = allAssets.filter(d => (d.MED_POLY == asset.MED_POLY) && (d.ROOT == 0));
+    assetsToAdd = allAssets.filter(d => (d.MED_POLY == asset.MED_POLY) && (d.ROOT == 0));
     assetsToAdd.forEach(d => {
     	d.rootName = asset.name;
     	filteredAssets.push(d);
     }); 
   }
   else if (asset.ROOT == 3) {
-    let assetsToAdd = allAssets.filter(d => (d.POWER_POLY == asset.POWER_POLY) && (d.ROOT < 3));
+    assetsToAdd = allAssets.filter(d => (d.POWER_POLY == asset.POWER_POLY) && (d.ROOT < 3));
     assetsToAdd.forEach(d => {
     	d.rootName = asset.name;
     	filteredAssets.push(d);
     }); 
 
   }
+  assetsToAdd = assetsToAdd.filter(d => d.ROOT > 0);
+  //console.log(filteredAssets.filter(d => (d.ROOT > 0) && (d.UFOKN_ID === asset.name)));
+  console.log(assetsToAdd);
+  leafletMap.addPolylines(filteredAssets.filter(d => (d.ROOT > 0) && (d.UFOKN_ID === asset.name)), assetsToAdd, false);
   //filteredAssets = filteredAssets.push(currRoot);
   //console.log(filteredAssets);
   filteredAssets = removeDuplicates(filteredAssets);
@@ -265,6 +325,7 @@ function removePolygonAssets(asset) {
 	// });
 
 	leafletMap.updatePolygon(null, true);
+	leafletMap.addPolylines(null, [], true);
 
 	let openRoots = openAssets.filter(item => item.open);
 	console.log(openRoots);	
@@ -336,13 +397,20 @@ function changeTree(index) {
 	openAssets.forEach(d => d.open = false);
 	filteredAssets = floodRoot.slice(0);
 	affectedCritAssets = [...new Set(floodRoot.map(item => item.UFOKN_ID))];
-	affectedAssets = [...new Set(floodRoot.map(item => item.UFOKN_ID))];
+	affectedAssets = floodRootID.slice(0);
 	updateAllCharts(filteredAssets); 
 	leafletMap.updatePolygon(null, true);
+	leafletMap.addPolylines(null, [], true);
 
 	hierarchyData.pop();
 	hierarchyData.push({name: floodRoot[index].UFOKN_ID, ROOT: floodRoot[index].ROOT, WATER_POLY: floodRoot[index].WATER_POLY, MED_POLY: floodRoot[index].MED_POLY, POWER_POLY: floodRoot[index].POWER_POLY, Address: floodRoot[index].Address, AssetInfo: floodRoot[index].AssetInfo, children: []});
 	hierarchyData[0].children = (getChildren(floodRoot[index]));
+
+	console.log(affectedAssets);
+	affectedAssets = Array.from(new Set(affectedAssets));
+	console.log(affectedAssets);
+
+	barchart.changeData();
 
 	updateTable();
 
@@ -411,14 +479,14 @@ function addLegend() {
 	var svg = d3.select("#my_dataviz");
 
 	// Handmade legend
-	svg.append("circle").attr("cx",50).attr("cy",130).attr("r", 10).style("fill", "#0000FF").style("stroke", "#000000");
-	svg.append("circle").attr("cx",50).attr("cy",160).attr("r", 10).style("fill", "#FF0000").style("stroke", "#000000");
-	svg.append("circle").attr("cx",50).attr("cy",190).attr("r", 10).style("fill", "#FFFF00").style("stroke", "#000000");
-	svg.append("circle").attr("cx",50).attr("cy",220).attr("r", 5).style("fill", "#FFFFFF").style("stroke", "#000000");
-	svg.append("text").attr("x", 70).attr("y", 130).text("Water Utility").style("font-size", "15px").attr("alignment-baseline","middle");
-	svg.append("text").attr("x", 70).attr("y", 160).text("Hospital").style("font-size", "15px").attr("alignment-baseline","middle");
-	svg.append("text").attr("x", 70).attr("y", 190).text("Power Station").style("font-size", "15px").attr("alignment-baseline","middle");
-	svg.append("text").attr("x", 70).attr("y", 220).text("Residential Asset").style("font-size", "15px").attr("alignment-baseline","middle");
+	svg.append("circle").attr("cx",50).attr("cy",30).attr("r", 10).style("fill", "#0000FF").style("stroke", "#000000");
+	svg.append("circle").attr("cx",50).attr("cy",60).attr("r", 10).style("fill", "#FF0000").style("stroke", "#000000");
+	svg.append("circle").attr("cx",50).attr("cy",90).attr("r", 10).style("fill", "#FFFF00").style("stroke", "#000000");
+	svg.append("circle").attr("cx",50).attr("cy",120).attr("r", 5).style("fill", "#FFFFFF").style("stroke", "#000000");
+	svg.append("text").attr("x", 70).attr("y", 30).text("Water Utility").style("font-size", "15px").attr("alignment-baseline","middle");
+	svg.append("text").attr("x", 70).attr("y", 60).text("Hospital").style("font-size", "15px").attr("alignment-baseline","middle");
+	svg.append("text").attr("x", 70).attr("y", 90).text("Power Station").style("font-size", "15px").attr("alignment-baseline","middle");
+	svg.append("text").attr("x", 70).attr("y", 120).text("Residential Asset").style("font-size", "15px").attr("alignment-baseline","middle");
 }
 
 // function changeDataset(value) {
