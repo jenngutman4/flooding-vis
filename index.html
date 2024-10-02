@@ -28,45 +28,56 @@
                             <option value="flood100">100 Year Flood</option>
                         </select>
                 </div> -->
-                <div id="legend-container">
-                    <svg id="my_dataviz" height=300 width=350></svg>
+                <div id = "controls-div">
+                    <div id="legend-container">
+                        <svg id="my_dataviz" height=150 width=350></svg>
+                    </div>
+                    
+                    <div id="checkboxes">
+                      <!-- <label>some label</label> -->
+                      <ul>
+                        <li><input type="checkbox" id="floodPolygon" onClick="leafletMap.showPolygons(0)"> Show Flooded Area</li>
+                        <li><input type="checkbox" id="electricPolygons" onClick="leafletMap.showPolygons(1)"> Show Electric Service Polygons</li>
+                        <li><input type="checkbox"id="medicalPolygons" onClick="leafletMap.showPolygons(2)"> Show Medical Service Polygons</li>
+                        <li><input type="checkbox"id="waterPolygons" onClick="leafletMap.showPolygons(3)"> Show Water Service Polygons</li>
+                        <li><input type="checkbox"id="flood100Polygons" onClick="leafletMap.showPolygons(4)"> Show 100 Year Flood</li>
+                      </ul>
+                    </div>
                 </div>
-                
-                <div id="checkboxes">
-                  <!-- <label>some label</label> -->
-                  <ul>
-                    <li><input type="checkbox" id="floodPolygon" onClick="leafletMap.showPolygons(0)"> Show Flooded Area</li>
-                    <li><input type="checkbox" id="electricPolygons" onClick="leafletMap.showPolygons(1)"> Show Electric Service Polygons</li>
-                    <li><input type="checkbox"id="medicalPolygons" onClick="leafletMap.showPolygons(2)"> Show Medical Service Polygons</li>
-                    <li><input type="checkbox"id="waterPolygons" onClick="leafletMap.showPolygons(3)"> Show Water Service Polygons</li>
-                    <li><input type="checkbox"id="flood100Polygons" onClick="leafletMap.showPolygons(4)"> Show 100 Year Flood</li>
-                  </ul>
+
+                <div class = "bar-chart">
+                    <svg id="barchart"></svg>
+                    <p style="float: right;"><input type="checkbox" id="barchartAll" onClick="barchart.changeData()" style="float: right;"> Show Impacted Assets for Entire Flood Event</p>
                 </div>
             </div>
+
+            
             
     </div>
+    
+    <!-- <div class="wrapper"> -->
+        <div> 
+            <label for="rootSelect">Select a directly impacted site: </label>
+            <select name="rootSelect" id="rootSelect" onchange="changeTree(this.value)"></select>
 
-    <div> 
-        <label for="rootSelect">Select a directly impacted site: </label>
-        <select name="rootSelect" id="rootSelect" onchange="changeTree(this.value)"></select>
+        </div>
 
-    </div>
+        <div>
+            <svg id = "tree"></svg>
+        </div>
 
-    <div>
-        <svg id = "tree"></svg>
-    </div>
-
-    <div>
-        <table>
-            <tr>
-                <th>Flooded Assets (Total/Critical)</th>
-                <th>One Step Removed (Total/Critical)</th>
-                <th>Two Steps Removed (Total/Critical)</th>
-            </tr>
-            <tr id = "selectedCascade"></tr>
-            <tr id = "totalRow"></tr>
-        </table>
-    </div>
+        <div>
+            <table>
+                <tr>
+                    <th>Flooded Assets (Total/Critical)</th>
+                    <th>One Step Removed (Total/Critical)</th>
+                    <th>Two Steps Removed (Total/Critical)</th>
+                </tr>
+                <tr id = "selectedCascade"></tr>
+                <tr id = "totalRow"></tr>
+            </table>
+        </div>
+    <!-- </div> -->
 
 
     
@@ -81,6 +92,7 @@
     <script src="js/Ohio_100_year_flood_Zones_shape_only.js"></script>
     <script src="js/Map.SelectArea.min.js"></script>
     <script src="js/leafletMap.js"></script>
+    <script src="js/barchart.js"></script>
     <script src="js/main.js"></script>
 
     <div id="tooltip"></div>
