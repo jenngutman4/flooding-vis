@@ -1,6 +1,6 @@
 #my-map {
   width: 1000px;
-  height: 600px;
+  height: 700px;
   z-index: 1000;
 }
 #tooltip {
@@ -70,6 +70,11 @@
   position: absolute;
   top: 20px;
   left: 1580px;
+}
+
+.controls-div {
+  display: flex;
+  flex-direction: row;
 }
 
 .controls {
