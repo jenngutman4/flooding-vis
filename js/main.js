@@ -11,6 +11,28 @@ let waterRootsDict = {};
 let medRootsDict= {};
 let powerRootsDict = {};
 let floodRootID = [];
+let selectionList = [];
+
+
+const loadingSpinner = document.getElementById('loading-spinner');
+
+function showSpinner() {
+	console.log("show");
+	console.log(loadingSpinner);
+	//loadingSpinner.style.zIndex = 999999;
+	// setTimeout(function(){
+  //     //hideSpinner();
+	// 		console.log("show");
+  //   }, 1000);
+  loadingSpinner.style.display = 'block';
+}
+
+function hideSpinner() {
+	console.log("hide");
+	console.log(loadingSpinner);
+	//loadingSpinner.style.zIndex = -999999;
+  loadingSpinner.style.display = 'none';
+}
 
 
 d3.csv('data/asset_data2.csv')
@@ -97,7 +119,7 @@ d3.csv('data/asset_data2.csv')
 		console.log(floodRoot);
 		
 		affectedCritAssets = [...new Set(floodRoot.map(item => item.UFOKN_ID))];
-		floodRoot.forEach((d, i) => document.getElementById('rootSelect').options[rootSelect.options.length] = new Option(d.UFOKN_ID, i));
+		//floodRoot.forEach((d, i) => document.getElementById('rootSelect').options[rootSelect.options.length] = new Option(d.UFOKN_ID, i));
 		
 		floodRootID = [...new Set(floodRoot.map(item => item.Index))];
 		affectedAssets = floodRootID.slice(0);
@@ -151,17 +173,74 @@ d3.csv('data/asset_data2.csv')
 
 		configureTable();
 		updateTable();
-
 		
 		leafletMap = new LeafletMap({ parentElement: '#my-map', legendElement: '#map-legend' }, filteredAssets, null);
 		tree = new Tree({'parentElement': '#tree'}, hierarchyData);
-		barchart = new BarChart({parentElement: '#barchart'}, allAssets.filter(d => affectedAssets.includes(d.Index)));
+		barchart = new BarChart({parentElement: '#barchart'}, allAssets);
 
 		addLegend();
+		hideSpinner();
 	}) 
 	.catch(error => console.error(error));
 
+// ORIGINAL 
 
+// function getChildren(floodRoot) {
+// 	let children = [];
+// 	let nextLevelRoots = [];
+// 	let nextLevelAssets = [];
+
+// 	// get assets affected by the root
+// 	switch(floodRoot.ROOT) {
+// 		case 0:
+// 			break;
+// 		case 1:
+// 			nextLevelAssets = allAssets.filter(asset => (asset.WATER_POLY == floodRoot.WATER_POLY) && ((asset.ROOT == 0) || (asset.ROOT == 2)));
+// 			break;
+// 		case 2:
+// 			nextLevelAssets = allAssets.filter(asset => (asset.MED_POLY == floodRoot.MED_POLY) && (asset.ROOT == 0));
+// 			break;
+// 		case 3:
+// 			nextLevelAssets = allAssets.filter(asset => (asset.POWER_POLY == floodRoot.POWER_POLY) && (asset.ROOT < 3));
+// 			break;
+// 	}
+
+// 	// remove assets already impacted by another root and add new assets to affected
+// 	nextLevelAssets = nextLevelAssets.filter(asset => affectedAssets.includes(asset.Index) == false);
+// 	nextLevelAssets.forEach(asset => affectedAssets.push(asset.Index));
+
+//     // get next level of roots
+// 	nextLevelRoots = nextLevelAssets.filter(asset => asset.ROOT > 0);
+
+// 	// add next level to hierarchy
+// 	if (nextLevelAssets.length > 0) {
+// 		children.push({name: (nextLevelAssets.length - nextLevelRoots.length).toString(), ROOT: 0});
+
+// 		nextLevelRoots = nextLevelRoots.filter(asset => affectedCritAssets.includes(asset.UFOKN_ID) == false);
+// 		nextLevelRoots.forEach(asset => affectedCritAssets.push(asset.UFOKN_ID));
+
+// 		nextLevelRoots.forEach((d, i) => {
+// 			children.push({name: d.UFOKN_ID, ROOT: d.ROOT, WATER_POLY: d.WATER_POLY, MED_POLY: d.MED_POLY, POWER_POLY: d.POWER_POLY, Address: d.Address, AssetInfo: d.AssetInfo, children: []});
+// 			children[i+1].children = getChildren(d);
+// 		});
+// 	}
+// 	else {
+// 		nextLevelRoots = nextLevelRoots.filter(asset => affectedCritAssets.includes(asset.UFOKN_ID) == false);
+// 		nextLevelRoots.forEach(asset => affectedCritAssets.push(asset.UFOKN_ID));
+
+// 		nextLevelRoots.forEach((d, i) => {
+// 			children.push({name: d.UFOKN_ID, ROOT: d.ROOT, WATER_POLY: d.WATER_POLY, MED_POLY: d.MED_POLY, POWER_POLY: d.POWER_POLY, Address: d.Address, AssetInfo: d.AssetInfo, children: []});
+// 			children[i].children = getChildren(d);
+// 		});
+
+// 	}
+	
+	
+// 	return children;
+// }
+
+
+// NEW 
 
 function getChildren(floodRoot) {
 	let children = [];
@@ -185,33 +264,45 @@ function getChildren(floodRoot) {
 
 	// remove assets already impacted by another root and add new assets to affected
 	nextLevelAssets = nextLevelAssets.filter(asset => affectedAssets.includes(asset.Index) == false);
+	
+
+  // get next level of roots
+	nextLevelRoots = nextLevelAssets.filter(asset => asset.ROOT > 0);
+	
+	nextLevelRoots = nextLevelRoots.filter(asset => affectedCritAssets.includes(asset.UFOKN_ID) == false);
+	nextLevelRoots.forEach(asset => affectedCritAssets.push(asset.UFOKN_ID));
+
+	nextLevelRoots.forEach((d, i) => {
+			children.push({name: d.UFOKN_ID, ROOT: d.ROOT, WATER_POLY: d.WATER_POLY, MED_POLY: d.MED_POLY, POWER_POLY: d.POWER_POLY, Address: d.Address, AssetInfo: d.AssetInfo, children: []});
+			children[i].children = getChildren(d);
+	});
+
+	nextLevelAssets = nextLevelAssets.filter(asset => affectedAssets.includes(asset.Index) == false);
 	nextLevelAssets.forEach(asset => affectedAssets.push(asset.Index));
 
-    // get next level of roots
-	nextLevelRoots = nextLevelAssets.filter(asset => asset.ROOT > 0);
 
 	// add next level to hierarchy
 	if (nextLevelAssets.length > 0) {
 		children.push({name: (nextLevelAssets.length - nextLevelRoots.length).toString(), ROOT: 0});
 
-		nextLevelRoots = nextLevelRoots.filter(asset => affectedCritAssets.includes(asset.UFOKN_ID) == false);
-		nextLevelRoots.forEach(asset => affectedCritAssets.push(asset.UFOKN_ID));
+		// nextLevelRoots = nextLevelRoots.filter(asset => affectedCritAssets.includes(asset.UFOKN_ID) == false);
+		// nextLevelRoots.forEach(asset => affectedCritAssets.push(asset.UFOKN_ID));
 
-		nextLevelRoots.forEach((d, i) => {
-			children.push({name: d.UFOKN_ID, ROOT: d.ROOT, WATER_POLY: d.WATER_POLY, MED_POLY: d.MED_POLY, POWER_POLY: d.POWER_POLY, Address: d.Address, AssetInfo: d.AssetInfo, children: []});
-			children[i+1].children = getChildren(d);
-		});
+		// nextLevelRoots.forEach((d, i) => {
+		// 	children.push({name: d.UFOKN_ID, ROOT: d.ROOT, WATER_POLY: d.WATER_POLY, MED_POLY: d.MED_POLY, POWER_POLY: d.POWER_POLY, Address: d.Address, AssetInfo: d.AssetInfo, children: []});
+		// 	children[i+1].children = getChildren(d);
+		// });
 	}
-	else {
-		nextLevelRoots = nextLevelRoots.filter(asset => affectedCritAssets.includes(asset.UFOKN_ID) == false);
-		nextLevelRoots.forEach(asset => affectedCritAssets.push(asset.UFOKN_ID));
+	// else {
+	// 	nextLevelRoots = nextLevelRoots.filter(asset => affectedCritAssets.includes(asset.UFOKN_ID) == false);
+	// 	nextLevelRoots.forEach(asset => affectedCritAssets.push(asset.UFOKN_ID));
 
-		nextLevelRoots.forEach((d, i) => {
-			children.push({name: d.UFOKN_ID, ROOT: d.ROOT, WATER_POLY: d.WATER_POLY, MED_POLY: d.MED_POLY, POWER_POLY: d.POWER_POLY, Address: d.Address, AssetInfo: d.AssetInfo, children: []});
-			children[i].children = getChildren(d);
-		});
+	// 	nextLevelRoots.forEach((d, i) => {
+	// 		children.push({name: d.UFOKN_ID, ROOT: d.ROOT, WATER_POLY: d.WATER_POLY, MED_POLY: d.MED_POLY, POWER_POLY: d.POWER_POLY, Address: d.Address, AssetInfo: d.AssetInfo, children: []});
+	// 		children[i].children = getChildren(d);
+	// 	});
 
-	}
+	// }
 	
 	
 	return children;
@@ -452,6 +543,21 @@ function updateTable() {
 	let secondLevel = 0;
 
 	let firstLevel = hierarchyData[0].children;
+
+	let cascadeName = hierarchyData[0].name;
+
+	switch(hierarchyData[0].ROOT) {
+		case 1: 
+			cascadeName = "Water Utility";
+			break;
+		case 2:
+			cascadeName = "Hospital";
+			break;
+		case 3:
+			cascadeName = "Power Station";
+			break;
+	}
+
 	if (firstLevel.length > 1) {
 		firstLevel.forEach(d =>{
 			if (d.ROOT > 0) {
@@ -463,12 +569,16 @@ function updateTable() {
 		});
 		//console.log(secondLevel);
 		//let firstLevelTotal = 
-		d3.select('#selectedCascade').html(`<td>${hierarchyData[0].name}</td>
-	                <td>${parseInt(hierarchyData[0].children[0].name) + hierarchyData[0].children.length - 1} total/${hierarchyData[0].children.length - 1} critical</td>
+
+		
+
+		console.log(hierarchyData);
+		d3.select('#selectedCascade').html(`<td>Selected ${cascadeName}</td>
+	                <td>${parseInt(hierarchyData[0].children[hierarchyData[0].children.length - 1].name) + hierarchyData[0].children.length - 1} total/${hierarchyData[0].children.length - 1} critical</td>
 	                <td>${secondLevel} total/${0} critical</td>`);
 	}
 	else {
-		d3.select('#selectedCascade').html(`<td>${hierarchyData[0].name}</td>
+		d3.select('#selectedCascade').html(`<td>Selected ${cascadeName}</td>
 	                <td>${hierarchyData[0].children[0].name} total/${0} critical</td>
 	                <td>${0} total/${0} critical</td>`);
 	}
@@ -479,15 +589,16 @@ function addLegend() {
 	var svg = d3.select("#my_dataviz");
 
 	// Handmade legend
-	svg.append("circle").attr("cx",50).attr("cy",30).attr("r", 10).style("fill", "#0000FF").style("stroke", "#000000");
-	svg.append("circle").attr("cx",50).attr("cy",60).attr("r", 10).style("fill", "#FF0000").style("stroke", "#000000");
-	svg.append("circle").attr("cx",50).attr("cy",90).attr("r", 10).style("fill", "#FFFF00").style("stroke", "#000000");
-	svg.append("circle").attr("cx",50).attr("cy",120).attr("r", 5).style("fill", "#FFFFFF").style("stroke", "#000000");
-	svg.append("text").attr("x", 70).attr("y", 30).text("Water Utility").style("font-size", "15px").attr("alignment-baseline","middle");
-	svg.append("text").attr("x", 70).attr("y", 60).text("Hospital").style("font-size", "15px").attr("alignment-baseline","middle");
-	svg.append("text").attr("x", 70).attr("y", 90).text("Power Station").style("font-size", "15px").attr("alignment-baseline","middle");
-	svg.append("text").attr("x", 70).attr("y", 120).text("Residential Asset").style("font-size", "15px").attr("alignment-baseline","middle");
+	svg.append("circle").attr("cx",50).attr("cy",20).attr("r", 10).style("fill", "#0000FF").style("stroke", "#000000");
+	svg.append("circle").attr("cx",50).attr("cy",50).attr("r", 10).style("fill", "#FF0000").style("stroke", "#000000");
+	svg.append("circle").attr("cx",50).attr("cy",80).attr("r", 10).style("fill", "#FFFF00").style("stroke", "#000000");
+	svg.append("circle").attr("cx",50).attr("cy",110).attr("r", 5).style("fill", "#FFFFFF").style("stroke", "#000000");
+	svg.append("text").attr("x", 70).attr("y", 20).text("Water Utility").style("font-size", "15px").attr("alignment-baseline","middle");
+	svg.append("text").attr("x", 70).attr("y", 50).text("Hospital").style("font-size", "15px").attr("alignment-baseline","middle");
+	svg.append("text").attr("x", 70).attr("y", 80).text("Power Station").style("font-size", "15px").attr("alignment-baseline","middle");
+	svg.append("text").attr("x", 70).attr("y", 110).text("Residential Asset").style("font-size", "15px").attr("alignment-baseline","middle");
 }
+
 
 // function changeDataset(value) {
 // 	if (value == "colabRoots") {
