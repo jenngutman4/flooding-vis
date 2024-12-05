@@ -28,9 +28,11 @@
                             <option value="flood100">100 Year Flood</option>
                         </select>
                 </div> -->
-                <div id = "controls-div">
+                <div id = "controls-div" class="controls-div">
+                    <!-- <p style="float: right;"><input type="checkbox" id="barchartAll" onClick="" style="float: right;"> Show Impacted Assets for Selected Cascade(s)</p> -->
+
                     <div id="legend-container">
-                        <svg id="my_dataviz" height=150 width=350></svg>
+                        <svg id="my_dataviz" height=150 width=300></svg>
                     </div>
                     
                     <div id="checkboxes">
@@ -46,8 +48,10 @@
                 </div>
 
                 <div class = "bar-chart">
+                    
+                    <p style="float: right;"><input type="checkbox" id="barchartAll" onClick="barchart.changeData()" style="float: right;"> Show Impacted Assets for Selected Cascade(s)</p>
+
                     <svg id="barchart"></svg>
-                    <p style="float: right;"><input type="checkbox" id="barchartAll" onClick="barchart.changeData()" style="float: right;"> Show Impacted Assets for Entire Flood Event</p>
                 </div>
             </div>
 
@@ -56,11 +60,11 @@
     </div>
     
     <!-- <div class="wrapper"> -->
-        <div> 
+        <!-- <div> 
             <label for="rootSelect">Select a directly impacted site: </label>
             <select name="rootSelect" id="rootSelect" onchange="changeTree(this.value)"></select>
 
-        </div>
+        </div> -->
 
         <div>
             <svg id = "tree"></svg>
@@ -79,6 +83,14 @@
         </div>
     <!-- </div> -->
 
+    <div id="loading-spinner">
+        <svg width="50" height="50" viewBox="0 0 50 50">
+            <circle cx="25" cy="25" r="20" fill="none" stroke-width="5" stroke="#007bff" stroke-dasharray="62.83185307179586 62.83185307179586" transform="rotate(0 25 25)">
+                <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="1s" from="0 25 25" to="360 25 25" />
+            </circle>
+        </svg>
+    </div>
+
 
     
     <script src="js/d3.v6.min.js"></script>
@@ -96,6 +108,7 @@
     <script src="js/main.js"></script>
 
     <div id="tooltip"></div>
+    <div id="context-menu" class="context-menu"></div>
 
 
 </body>

@@ -355,7 +355,18 @@ class LeafletMap {
                         	else {
                         		showRootforBuilding(d);
                         	}
-                        });
+                        })
+                        .on("contextmenu", function (event, d) {
+                        	 console.log(event);
+                        	 console.log(d);
+								           event.preventDefault();
+								            console.log("right click");
+								            vis.createContextMenu([
+												      { label: "Add to Selected List", action: () => { console.log("add"); } },
+												      { label: "Remove from Selected List", action: () => { console.log("remove"); } }
+												    ]);
+								           // react on right-clicking
+								        });
                         // .on('click', (event, d) => { 
                         // 		window.open(d.references);
                         // //experimental feature I was trying- click on point and then fly to it
@@ -514,6 +525,8 @@ class LeafletMap {
   		children.forEach(function (d) {
   			//vis.polylines.push([[asset[0].Y, asset[0].X], [d.Y, d.X]]);
   			var tempLine = L.polyline([[asset[0].Y, asset[0].X], [d.Y, d.X]], { color:  lineColor, pane: "shapePane" }).addTo(vis.theMap);
+  			console.log(tempLine);
+  			//L.featureGroup(vis.getArrows([[asset[0].Y, asset[0].X], [d.Y, d.X]], 'red', 1, vis.theMap)).addTo(vis.theMap);
   			vis.polylines.push(tempLine);
   		})
   	}
@@ -531,22 +544,147 @@ class LeafletMap {
   	// vis.polylineLayer.bringToFront();
   }
   
-  // filterData(bLatLon)
-  // {
-// 	  let vis = this;
-// 	  let newData = [];
+  filterData(bLatLon)
+  {
+	  let vis = this;
+	  let newData = [];
 	  
-// 	  let latlon = bLatLon.split(',');
-// 	  vis.data.filter(function(d) {
-// 		  if(d.decimalLatitude <= parseFloat(latlon[3]) && d.decimalLatitude >= parseFloat(latlon[1]) && d.decimalLongitude >= parseFloat(latlon[0]) && d.decimalLongitude <= parseFloat(latlon[2]))
-// 		  {
-// 			  newData.push(d);
-// 		  }
-// 	  });
-// 	  console.log(newData);
-// 	  UpdateAllCharts(newData);
+	  let latlon = bLatLon.split(',');
+	  console.log(vis.data);
+	  vis.data.filter(function(d) {
+		  if(d.Y <= parseFloat(latlon[3]) && d.Y >= parseFloat(latlon[1]) && d.X >= parseFloat(latlon[0]) && d.X <= parseFloat(latlon[2]))
+		  {
+			  newData.push(d);
+		  }
+	  });
+	  console.log(newData);
+	  updateAllCharts(newData);
 	  
-  // }
+  }
   
-  
+  createContextMenu(data) {
+  	let vis = this;
+  	console.log(event);
+  	console.log(data);
+
+	  vis.menu = d3.select("#context-menu")
+	    .style("position", "absolute")
+	    .style('z-index', 1000000)
+	    .style("left", event.pageX + "px")
+	    .style("top", event.pageY + "px")
+	    .style("display", "none");
+                                
+
+	  vis.menu.selectAll("li")
+	    .data(data)
+	    .join("li")
+		    .text(d => {
+		    	console.log(d);
+		    	return(d.label);})
+		    .style('list-style-type', 'none')
+		    .on("click", (event, d) => {
+		    	console.log(d);
+		    	console.log(event);
+		      d.action(data); // Execute the action associated with the menu item
+		      vis.menu.style("display", "none");// Remove the menu after an item is clicked
+		    });
+
+	  vis.menu.style("display", "block");
+	}
+
+	//TRYING TO ADD ARROW MARKERS
+
+	// getArrows(arrLatlngs, color, arrowCount, mapObj) {
+	// 		let vis = this;
+
+	//     if (typeof arrLatlngs === undefined || arrLatlngs == null || (!arrLatlngs.length) || arrLatlngs.length < 2)          
+	//     	return [];
+
+	//     if (typeof arrowCount === 'undefined' || arrowCount == null)
+	//        arrowCount = 1;
+
+	//     if (typeof color === 'undefined' || color == null)
+	//        color = '';
+	//     else
+	//        color = 'color:' + color;
+
+	//     var result = [];
+	//     for (var i = 1; i < arrLatlngs.length; i++) {
+	//         var icon = L.divIcon({ className: 'arrow-icon', bgPos: [5, 5], html: '<div style="' + color + ';transform: rotate(' + vis.getAngle(arrLatlngs[i - 1], arrLatlngs[i], -1).toString() + 'deg)">▶</div>' });
+	//         for (var c = 1; c <= arrowCount; c++) {
+	//             result.push(L.marker(vis.myMidPoint(arrLatlngs[i], arrLatlngs[i - 1], (c / (arrowCount + 1)), mapObj), { icon: icon }));
+	//         }
+	//     }
+	//     return result;
+	// }
+
+	// getAngle(latLng1, latlng2, coef) {
+	//     var dy = latlng2[0] - latLng1[0];
+	//     var dx = Math.cos(Math.PI / 180 * latLng1[0]) * (latlng2[1] - latLng1[1]);
+	//     var ang = ((Math.atan2(dy, dx) / Math.PI) * 180 * coef);
+	//     return (ang).toFixed(2);
+	// }
+
+	// myMidPoint(latlng1, latlng2, per, mapObj) {
+	// 	let vis = this;
+	//     if (!mapObj)
+	//         throw new Error('map is not defined');
+
+	//     var halfDist, segDist, dist, p1, p2, ratio,
+	//         points = [];
+
+	//     p1 = mapObj.project(new L.latLng(latlng1));
+	//     p2 = mapObj.project(new L.latLng(latlng2));
+
+	//     halfDist = vis.distanceTo(p1, p2) * per;
+
+	//     if (halfDist === 0)
+	//         return mapObj.unproject(p1);
+
+	//     dist = vis.distanceTo(p1, p2);
+
+	//     if (dist > halfDist) {
+	//         ratio = (dist - halfDist) / dist;
+	//         var res = mapObj.unproject(new Point(p2.x - ratio * (p2.x - p1.x), p2.y - ratio * (p2.y - p1.y)));
+	//         return [res.lat, res.lng];
+	//     }
+
+	// }
+
+	// distanceTo(p1, p2) {
+	//     var x = p2.x - p1.x,
+	//         y = p2.y - p1.y;
+
+	//     return Math.sqrt(x * x + y * y);
+	// }
+
+	
+
+
+
+
+
 }
+
+//PART OF ARROW MARKERS
+
+// function toPoint(x, y, round) {
+// 	    if (x instanceof Point) {
+// 	        return x;
+// 	    }
+// 	    if (isArray(x)) {
+// 	        return new Point(x[0], x[1]);
+// 	    }
+// 	    if (x === undefined || x === null) {
+// 	        return x;
+// 	    }
+// 	    if (typeof x === 'object' && 'x' in x && 'y' in x) {
+// 	        return new Point(x.x, x.y);
+// 	    }
+// 	    return new Point(x, y, round);
+// }
+
+// function Point(x, y, round) {
+// 	    this.x = (round ? Math.round(x) : x);
+// 	    this.y = (round ? Math.round(y) : y);
+// }

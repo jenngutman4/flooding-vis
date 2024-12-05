@@ -370,12 +370,12 @@ class BarChart {
   changeData() {
     let vis = this;
 
- 
+    showSpinner();
 
     var checkBox = document.getElementById("barchartAll");
       //var text = document.getElementById("text");
 
-      if (checkBox.checked == true){
+      if (checkBox.checked == false){
         vis.data = allAssets;
         vis.updateVis();
       } else {
@@ -383,7 +383,12 @@ class BarChart {
         vis.data = allAssets.filter(d => affectedAssets.includes(d.Index));
         vis.updateVis();
       }
+
+    setTimeout(function(){
+      hideSpinner();
+    }, 1000);
   }
+
   
 
 }
